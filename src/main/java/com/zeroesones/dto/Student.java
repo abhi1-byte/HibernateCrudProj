@@ -1,12 +1,17 @@
 package com.zeroesones.dto;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
 public class Student {
 
 	@Id
+	@GenericGenerator(name = "gen1",strategy = "increment")
+	@GeneratedValue(generator="gen1")
 	private Integer sid;
 	private String sname;
 	private String saddress;
