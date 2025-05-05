@@ -3,6 +3,7 @@ package com.zeroesones.controller;
 import com.zeroesones.dto.Student;
 import com.zeroesones.service.IStudentService;
 import com.zeroesones.servicefactory.StudentServiceFactory;
+import com.zeroesones.utils.HibernateUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,6 +38,8 @@ public class MainApp {
                     deleteStudent();
                     break;
                 case "5":
+                    HibernateUtil.closeSession();
+                    HibernateUtil.closeSessionFactory();
                     System.out.println("******* Thanks for using the application *****");
                     System.exit(0);
                 default:
@@ -57,8 +60,11 @@ public class MainApp {
 
         System.out.print("Enter the student address :: ");
         String saddress = scanner.next();
-
-        Integer inserted = studentService.addStudent(sname, sage, saddress);
+        Student s = new Student();
+        s.setSname(sname);
+        s.setSage(sage);
+        s.setSaddress(saddress);
+        Integer inserted = studentService.save(s);
         if (inserted == 1)
             System.out.println("Insertion Successful");
         else
@@ -69,7 +75,7 @@ public class MainApp {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter the student id :: ");
         int sid = scanner.nextInt();
-        Student std = studentService.searchStudent(sid);
+        Student std = studentService.getById(sid);
         if (std != null) {
             System.out.println("sid\tsname\tsage\tsaddress");
             System.out.println(std.getSid() + "\t" + std.getSname() + "\t" + std.getSage() + "\t" + std.getSaddress());
@@ -83,11 +89,11 @@ public class MainApp {
         Scanner scanner = new Scanner(System.in);
         System.out.print("Enter the student id to delete:: ");
         int sid = scanner.nextInt();
-        Integer deleted = studentService.deleteStudent(sid);
+        Integer deleted = studentService.deleteById(sid);
         if (deleted == 1) {
             System.out.println("The Student Id " + sid + " got deleted successfully");
-        } else {
-            System.out.println("The Student Id " + sid + " did not deleted");
+        } else if (deleted == 0) {
+            System.out.println("The Student Id " + sid + " not existed to delete");
         }
     }
 
@@ -99,7 +105,7 @@ public class MainApp {
         String oldAddress = null;
         System.out.println("Enter the student id to update:: ");
         String sid = br.readLine();
-        Student std = studentService.searchStudent(Integer.parseInt(sid));
+        Student std = studentService.getById(Integer.parseInt(sid));//Puts in L1-Cache
         if (std != null) {
             oldName = std.getSname();
             oldAge = std.getSage();
@@ -133,7 +139,12 @@ public class MainApp {
         System.out.println("Oldname is " + oldName + " newname is:" + sname);
         System.out.println("Oldage is " + oldAge + " newage is:" + sage);
         System.out.println("Oldaddress is " + oldAddress + " newaddress is:" + saddress);
-        Integer updated = studentService.updateStudent(Integer.valueOf(sid), sname, Integer.valueOf(sage), saddress);
+        Student s = new Student();
+        s.setSid(Integer.valueOf(sid));//this object with this sid will already available in L1-Cache, so use merge to update
+        s.setSname(sname);
+        s.setSage(Integer.valueOf(sage));
+        s.setSaddress(saddress);
+        Integer updated = studentService.updateById(s);//using session.merge(s) to update
         if (updated == 1) {
             System.out.println("The Student Id " + sid + " got updated successfully");
         } else {
